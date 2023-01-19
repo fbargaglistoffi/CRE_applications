@@ -1,0 +1,164 @@
+set.seed(2022)
+library("foreach")
+library("doParallel")
+library("cre")
+
+# Set Experiment Parameter
+experiment <- "main"  # in {'main', 'small_sample', 'more_rules',
+                      #     'more_rules', 'rct', 'nonlin_conf', 'personalize'}
+cutoff <- 0.8         # in [0,1]
+
+if (experiment=="main") {
+  n_rules <- 2
+  sample_size <- 2000
+  confounding <- "lin"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
+  em <- c("x1","x2","x5","x6")
+  max_depth <- 2
+} else if (experiment=="small_sample") {
+  n_rules <- 2
+  sample_size <- 1000
+  confounding <- "lin"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
+  em <- c("x1","x2","x5","x6")
+  max_depth <- 2
+} else if (experiment=="more_rules") {
+  n_rules <- 4
+  sample_size <- 2000
+  confounding <- "lin"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5",
+          "x4>0.5", "x5<=0.5 & x7>0.5 & x8<=0.5")
+  em <- c("x1","x2","x5","x6","x4","x7","x8")
+  max_depth <- 3
+} else if (experiment=="rct") {
+  n_rules <- 2
+  sample_size <- 2000
+  confounding <- "no"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
+  em <- c("x1","x2","x5","x6")
+  max_depth <- 2
+} else if (experiment=="nonlin_conf") {
+  n_rules <- 2
+  sample_size <- 2000
+  confounding <- "nonlin"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
+  em <- c("x1","x2","x5","x6")
+  max_depth <- 2
+} else if (experiment=="personalize") {
+  n_rules <- NA
+  sample_size <- NA
+  confounding <- NA
+  dr <- NA
+  em <- NA
+  max_depth <- NA
+  stop("'personalize' esperiment non defined yet.")
+} else {
+  stop(paste("'",experiment,"' experiment doesn't exist.", sep=""))
+}
+
+
+# Other Setting
+{
+  n_seeds <- 250
+  ratio_dis <- 0.5
+  effect_sizes <- seq(0, 5, 0.2)
+  ITE_estimators <- c("aipw","cf","bcf","slearner","tlearner","xlearner","bart")
+
+  method_params <- list(ratio_dis = ratio_dis,
+                        ite_method_dis = "aipw",
+                        ps_method_dis = "SL.xgboost",
+                        oreg_method_dis = "SL.xgboost",
+                        ite_method_inf = "aipw",
+                        ps_method_inf = "SL.xgboost",
+                        oreg_method_inf = "SL.xgboost")
+
+  hyper_params <- list(intervention_vars = NULL,
+                       offset = NULL,
+                       ntrees_rf = 40,
+                       ntrees_gbm = 40,
+                       node_size = 20,
+                       max_nodes = 2^max_depth,
+                       max_depth = max_depth,
+                       t_decay = 0.025,
+                       t_ext = 0.01,
+                       t_corr = 1,
+                       t_pvalue = 0.05,
+                       replace = TRUE,
+                       stability_selection = TRUE,
+                       cutoff = cutoff,
+                       pfer = 1,
+                       penalty_rl = 1)
+}
+
+
+# Set Cluster
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+discovery <- data.frame(matrix(ncol = 9, nrow = 0))
+for(effect_size in effect_sizes){
+  print(paste("Effect Size", effect_size))
+  for (ITE_estimator in ITE_estimators){
+    # CRE (estimator i)
+    method <- paste("CRE (", ITE_estimator, ")", sep = "")
+    time.before <- proc.time()
+    discovery_i <- foreach(seed = seq(1, n_seeds, 1), .combine=rbind) %dopar% {
+      library("cre")
+      set.seed(seed)
+
+      # Generate Dataset
+      dataset <- generate_cre_dataset(n = sample_size,
+                                      rho = 0,
+                                      p = 10,
+                                      effect_size = effect_size,
+                                      n_rules = n_rules,
+                                      binary_covariates = TRUE,
+                                      binary_outcome = FALSE,
+                                      confounding = confounding)
+      y <- dataset[["y"]]
+      z <- dataset[["z"]]
+      X <- dataset[["X"]]
+      X_names <- colnames(X)
+
+      method_params[["ite_method_dis"]] <- ITE_estimator
+      method_params[["ite_method_inf"]] <- ITE_estimator
+      hyper_params[["pfer"]] <- n_rules/(effect_size+1)
+      metrics <- tryCatch({
+        result <- cre(y, z, X, method_params, hyper_params)
+
+        dr_pred <- result$CATE$Rule[result$CATE$Rule %in% "(BATE)" == FALSE]
+        metrics_dr <- evaluate(dr, dr_pred)
+        em_pred <- extract_effect_modifiers(dr_pred, X_names)
+        metrics_em <- evaluate(em, em_pred)
+
+        c(method, effect_size, seed,
+          metrics_dr$IoU, metrics_dr$precision, metrics_dr$recall,
+          metrics_em$IoU, metrics_em$precision, metrics_em$recall)
+      },
+      error = function(e) {
+        c(method, effect_size, seed, NaN,NaN,NaN,NaN,NaN,NaN)
+      })
+      return(metrics)
+    }
+    discovery <- rbind(discovery, discovery_i)
+    time.after <- proc.time()
+    print(paste("CRE -", ITE_estimator,"(Time: ",
+                round((time.after - time.before)[[3]],2), "sec)"))
+  }
+}
+
+colnames(discovery) <- c("method","effect_size","seed",
+                         "dr_IoU","dr_Precision","dr_Recall",
+                         "em_IoU","em_Precision","em_Recall")
+rownames(discovery) <- 1:nrow(discovery)
+
+# Save results
+results_dir <- "results/"
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+exp_name <- paste("discovery",experiment,"cutoff",cutoff, sep="_")
+file_dir <- paste(results_dir,exp_name,".RData", sep="")
+save(discovery, file=file_dir)
+
+stopCluster(cl)
