@@ -1,5 +1,5 @@
 # Causal Rule Ensemble: Applications
-Collection of simulations and real world experiments on Interpretable Inference of Heterogeneous Treatment Effects by Causal Rule Ensemble.
+Collection of simulations and real world experiments on Interpretable Inference of Heterogeneous Treatment Effects by [Causal Rule Ensemble](https://nsaph-software.github.io/CRE/).
 
 ## Installation
 Installing from CRAN.
