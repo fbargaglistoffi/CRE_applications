@@ -1,7 +1,9 @@
 set.seed(2022)
 library("foreach")
 library("doParallel")
-library("cre")
+library("devtools")
+setwd("~/CRE/R")
+load_all()
 
 # Set Experiment Parameter
 experiment <- "main"  # in {'main', 'small_sample', 'more_rules',
@@ -63,7 +65,7 @@ if (experiment=="main") {
   n_seeds <- 250
   ratio_dis <- 0.5
   effect_size <- 5
-  ITE_estimators <- c("aipw","cf","bcf","slearner","tlearner","xlearner","bart")
+  ite_estimators <- c("aipw","cf","bcf","slearner","tlearner","xlearner","bart")
 
   method_params <- list(ratio_dis = ratio_dis,
                         ite_method_dis = "aipw",
@@ -92,7 +94,15 @@ if (experiment=="main") {
 }
 
 # Set Cluster
-cl <- makeCluster(detectCores())
+cl <- makeCluster(detectCores(), type="PSOCK")
+clusterExport(cl, ls(globalenv()))
+load_packages <- function(){
+  library("devtools")
+  setwd("~/CRE/R")
+  load_all()
+}
+clusterEvalQ(cl, load_packages())
+
 registerDoParallel(cl)
 
 
@@ -102,8 +112,6 @@ for (ite_estimator in ite_estimators){
   # CRE (estimator i)
   time.before <- proc.time()
   estimation_i <- foreach(seed = seq(1, n_seeds, 1), .combine=rbind) %dopar% {
-    library("devtools")
-    load_all()
     set.seed(seed)
     # Generate Dataset
     dataset <- generate_cre_dataset(n = sample_size,
@@ -153,7 +161,6 @@ for (ite_estimator in ite_estimators){
   # estimator i
   time.before <- proc.time()
   estimation_i <- foreach(seed = seq(1, n_seeds, 1), .combine=rbind) %dopar% {
-    library("cre")
     set.seed(seed)
     # Generate Dataset
     dataset <- generate_cre_dataset(n = sample_size,
@@ -196,7 +203,7 @@ colnames(estimation) <- c("method","effect_size","seed",
 rownames(estimation) <- 1:nrow(estimation)
 
 # Save results
-results_dir <- "results/"
+results_dir <- "~/CRE_applications/simulations/results/"
 if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }

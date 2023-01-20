@@ -1,7 +1,7 @@
 set.seed(2022)
 library("foreach")
 library("doParallel")
-library("cre")
+library("CRE")
 
 # Set Experiment Parameter
 experiment <- "main"  # in {'main', 'small_sample', 'more_rules',
@@ -88,11 +88,37 @@ if (experiment=="main") {
                        cutoff = cutoff,
                        pfer = 1,
                        penalty_rl = 1)
+
+  evaluate <- function(ground_truth, prediction) {
+    intersect <- intersect(prediction, ground_truth)
+    union <- union(prediction, ground_truth)
+    TP <- length(intersect)
+    FP <- length(setdiff(prediction, ground_truth))
+    FN <- length(setdiff(ground_truth, prediction))
+    recall <- TP / (TP + FN) # quantity
+    precision <- TP / (TP + FP) # quality
+    IoU <- length(intersect) / length(union)
+    evaluate <- list(recall = recall,
+                     precision = precision,
+                     IoU = IoU)
+    return(evaluate)
+  }
+  extract_effect_modifiers <- function(rules_list, X_names) {
+    effect_modifiers <- c()
+    for (X_name in X_names) {
+      if (any(grepl(X_name, rules_list))) {
+        effect_modifiers <- append(effect_modifiers, X_name)
+      }
+    }
+    return(effect_modifiers)
+  }
 }
 
 
 # Set Cluster
-cl <- makeCluster(detectCores())
+cl <- makeCluster(detectCores(), type="PSOCK")
+clusterExport(cl, ls(globalenv()))
+clusterEvalQ(cl, library("CRE"))
 registerDoParallel(cl)
 
 discovery <- data.frame(matrix(ncol = 9, nrow = 0))
@@ -103,7 +129,7 @@ for(effect_size in effect_sizes){
     method <- paste("CRE (", ITE_estimator, ")", sep = "")
     time.before <- proc.time()
     discovery_i <- foreach(seed = seq(1, n_seeds, 1), .combine=rbind) %dopar% {
-      library("cre")
+      library("CRE")
       set.seed(seed)
 
       # Generate Dataset
@@ -153,7 +179,7 @@ colnames(discovery) <- c("method","effect_size","seed",
 rownames(discovery) <- 1:nrow(discovery)
 
 # Save results
-results_dir <- "results/"
+results_dir <- "~/CRE_applications/simulations/results/"
 if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }
