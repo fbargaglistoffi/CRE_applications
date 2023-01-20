@@ -7,6 +7,8 @@ t_pm25 <- 10
 outcome <- "mean"
 zip <- FALSE
 q <- 0
+cutoff <- 0.9
+pfer <- 5
 
 # Load (preprocessed) Medicare
 setwd(paste("/n/home_fasse/rcadei/medicare/",statename,sep=''))
@@ -52,8 +54,8 @@ hyper_params = list(intervention_vars = intervention_vars,
                     t_corr = 0.5,
                     t_pvalue = 0.05,
                     stability_selection = TRUE,
-                    cutoff = 0.8,
-                    pfer = 100,
+                    cutoff = cutoff,
+                    pfer = pfer,
                     penalty_rl = 1)
 
 time_start <- proc.time()
@@ -63,7 +65,7 @@ print(paste("Time:",round((time_end - time_start)[[3]],2),"sec"))
 
 summary(cre_result)
 
-exp_name <- paste("CRE_pm25",t_pm25,outcome,"q",q,sep="_")
+exp_name <- paste("CRE_pm25",t_pm25,outcome,"q",q,"pfer",pfer,sep="_")
 pdf(paste(exp_name,".pdf",sep=""), width = 6.5, height = 4)
 plot(cre_result)
 dev.off()
