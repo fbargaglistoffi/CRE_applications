@@ -4,8 +4,8 @@ library("doParallel")
 library("CRE")
 
 # Set Experiment Parameter
-experiment <- "main"  # in {'main', 'small_sample', 'more_rules',
-                      #     'more_rules', 'rct', 'nonlin_conf', 'personalize'}
+experiment <- "main"  # in {'main','small_sample','big_sample','more_rules',
+                      #     'more_rules','rct','nonlin_conf','personalize'}
 cutoff <- 0.8         # in [0,1]
 
 if (experiment=="main") {
@@ -18,6 +18,13 @@ if (experiment=="main") {
 } else if (experiment=="small_sample") {
   n_rules <- 2
   sample_size <- 1000
+  confounding <- "lin"
+  dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
+  em <- c("x1","x2","x5","x6")
+  max_depth <- 2
+} else if (experiment=="big_sample") {
+  n_rules <- 2
+  sample_size <- 5000
   confounding <- "lin"
   dr <- c("x1>0.5 & x2<=0.5", "x5>0.5 & x6<=0.5")
   em <- c("x1","x2","x5","x6")

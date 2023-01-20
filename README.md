@@ -24,6 +24,7 @@ Evaluate the decision rules discovery performances (i.e. Recall, Precision, Jacc
 Different experiment setting varying the dataset are considered:
 - `main`: main experiment (2 rules, 2000 individuals, linear confounding),
 - `small_sample`: small sample (2 rules, 1000 individuals, linear confounding),
+- `big_sample`: big sample (2 rules, 5000 individuals, linear confounding),
 - `more_rules`: more rules (4 rules, 2000 individuals, linear confounding),
 - `rct`: randomized controlled trial (2 rules, 2000 individuals, no confounding),
 - `nonlin_conf`: non linear confounding (2 rules, 2000 individuals, non linear confounding).
@@ -39,6 +40,7 @@ Evaluate the ITE estimation performances (i.e. Root Mean Squared Error and Bias)
 Different experiment setting varying the dataset are considered:
 - `main`: main experiment (2 rules, 2000 individuals, linear confounding),
 - `small_sample`: small sample (2 rules, 1000 individuals, linear confounding),
+- `big_sample`: big sample (2 rules, 5000 individuals, linear confounding),
 - `more_rules`: more rules (4 rules, 2000 individuals, linear confounding),
 - `rct`: randomized controlled trial (2 rules, 2000 individuals, no confounding),
 - `nonlin_conf`: non linear confounding (2 rules, 2000 individuals, non linear confounding).
