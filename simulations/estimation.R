@@ -6,10 +6,9 @@ setwd("~/CRE/R")
 load_all()
 
 # Set Experiment Parameter
-experiment <- "main"  # in {'main','small_sample','big_sample','more_rules',
-                      #     'more_rules','rct','nonlin_conf','personalize'}
-cutoff <- 0.8         # in [0,1]
-pfer <- 1             # in (0,+inf)
+experiment <- "main"
+cutoff <- 0.8
+pfer <- 1
 
 if (experiment=="main") {
   n_rules <- 2

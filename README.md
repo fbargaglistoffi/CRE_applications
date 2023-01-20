@@ -32,7 +32,7 @@ Different experiment setting varying the dataset are considered:
 Customize your own experiment filling the parameters in `personalize` experiment option.
 
 ### Estimation
-Evaluate the ITE estimation performances (i.e. Root Mean Squared Error and Bias) of Causal Rule Ensemble using different internal ITE estimators (i.e. S-Learner, T-Learner, X-Learner, Augmented Inverse Propability Weighting, Causal Forest, Bayesian Causal Forest and Bayesian Regression Tree), the corresponding ITE estimators alone, and (Honest) Causal Tree. For the experiments on Causal Rule Ensemble retriving the correct decision rules also compute the corresponding (normalized) biases of their coefficients in the linear CATE decmposition. 
+Evaluate the ITE estimation performances (i.e. Root Mean Squared Error and Bias) of Causal Rule Ensemble using different internal ITE estimators (i.e. S-Learner, T-Learner, X-Learner, Augmented Inverse Propability Weighting, Causal Forest, Bayesian Causal Forest and Bayesian Regression Tree), the corresponding ITE estimators alone [1], and (Honest) Causal Tree. For the experiments on Causal Rule Ensemble retriving the correct decision rules also compute the corresponding (normalized) biases of their coefficients in the linear CATE decmposition. 
 ```r
 "CRE_applications/simulations/estimation.R"
 ```
@@ -47,11 +47,16 @@ Different experiment setting varying the dataset are considered:
 
 Customize your own experiment filling the parameters in `personalize` experiment option.
 
+[1] Run using the internal CRE function `estimate_ite()`. To reproduce the same analysis, either download the [CRE GitHub repository](https://github.com/NSAPH-Software/CRE) in local, or replace `estimate_ite()` with the corresponding function of your favorite library for ITE estimation, or discard this comparison (commenting [this piece of code](https://github.com/riccardocadei/CRE_applications/blob/b4e53c9cc3e3552f7c40af3bbb9d4a607812c22d/simulations/estimation.R#L167)).
+
 ## Experiments
 
 ### MEDICARE: Air Pollution Exposure -> Mortality
 
-Individual Level Analysis
+Individual-level analysis of the heterogeneity in the exposure to PM2.5 effect on mortality using MEDICARE (private dataset).
+```r
+"CRE_applications/experiments/medicare.R"
+```
 
 
 
