@@ -53,7 +53,8 @@ Customize your own experiment filling the parameters in `personalize` experiment
 
 ### MEDICARE: Air Pollution Exposure -> Mortality
 
-Individual-level analysis of the heterogeneity in the exposure to PM2.5 effect on mortality using MEDICARE (private dataset).
+Individual-level analysis of the heterogeneity in the exposure to PM2.5 effect on mortality using Medicare. 
+All data needed to evaluate the conclusions in the paper are present in the paper and/or the Supplementary Materials. Medicare patient individual-level data are stored at a Level-3 secured data platform on Research Computing Environment, supported by the Institute for Quantitative Social Science in the Faculty of Arts and Sciences at Harvard University. Those interested in the original data can contact the corresponding author.
 ```r
 "CRE_applications/experiments/medicare.R"
 ```
