@@ -5,6 +5,7 @@ library("CRE")
 
 # Set Experiment Parameter
 experiment <- "main"
+cutoff <- 0.8
 
 if (experiment=="main") {
   n_rules <- 2
@@ -64,34 +65,30 @@ if (experiment=="main") {
 
 # Other Setting
 {
-  n_seeds <- 250
-  ratio_dis <- 0.5
-  effect_sizes <- seq(0, 5, 0.2)
-  ITE_estimators <- c("aipw","cf","bcf","slearner","tlearner","xlearner","bart")
+  n_seeds <- 10
+  effect_sizes <- seq(0, 5, 0.5)
+  ITE_estimators <- c("aipw","cf","slearner","tlearner","xlearner","bart")
 
-  method_params <- list(ratio_dis = ratio_dis,
-                        ite_method_dis = "aipw",
-                        ps_method_dis = "SL.xgboost",
-                        oreg_method_dis = "SL.xgboost",
-                        ite_method_inf = "aipw",
-                        ps_method_inf = "SL.xgboost",
-                        oreg_method_inf = "SL.xgboost")
+  method_params <- list(ratio_dis = 0.5,
+                        ite_method = "aipw",
+                        learner_ps = "SL.xgboost",
+                        learner_y = "SL.xgboost")
 
   hyper_params <- list(intervention_vars = NULL,
                        offset = NULL,
-                       ntrees_rf = 40,
-                       ntrees_gbm = 40,
+                       ntrees = 40,
                        node_size = 20,
-                       max_nodes = 2^max_depth,
-                       max_depth = max_depth,
+                       max_rules = 50,
+                       max_depth = 2,
                        t_decay = 0.025,
-                       t_ext = 0.01,
+                       t_ext = 0.025,
                        t_corr = 1,
                        t_pvalue = 0.05,
-                       replace = TRUE,
-                       stability_selection = TRUE,
+                       stability_selection = "error_control",
+                       cutoff = cutoff,
                        pfer = 1,
-                       penalty_rl = 1)
+                       B = 20,
+                       subsample = 0.1)
 
   evaluate <- function(ground_truth, prediction) {
     intersect <- intersect(prediction, ground_truth)
@@ -150,13 +147,12 @@ for(effect_size in effect_sizes){
       X <- dataset[["X"]]
       X_names <- colnames(X)
 
-      method_params[["ite_method_dis"]] <- ITE_estimator
-      method_params[["ite_method_inf"]] <- ITE_estimator
+      method_params[["ite_method"]] <- ITE_estimator
       hyper_params[["pfer"]] <- n_rules/(effect_size+1)
       metrics <- tryCatch({
         result <- cre(y, z, X, method_params, hyper_params)
 
-        dr_pred <- result$CATE$Rule[result$CATE$Rule %in% "(BATE)" == FALSE]
+        dr_pred <- result$CATE$Rule[result$CATE$Rule %in% "(ATE)" == FALSE]
         metrics_dr <- evaluate(dr, dr_pred)
         em_pred <- extract_effect_modifiers(dr_pred, X_names)
         metrics_em <- evaluate(em, em_pred)
@@ -183,11 +179,11 @@ colnames(discovery) <- c("method","effect_size","seed",
 rownames(discovery) <- 1:nrow(discovery)
 
 # Save results
-results_dir <- "~/CRE_applications/simulations/results/"
+results_dir <- "~/Desktop/CRE_applications/simulations/results/"
 if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }
-exp_name <- paste("discovery",experiment, sep="_")
+exp_name <- paste("discovery",experiment,"cutoff",cutoff, sep="_")
 file_dir <- paste(results_dir,exp_name,".RData", sep="")
 save(discovery, file=file_dir)
 
