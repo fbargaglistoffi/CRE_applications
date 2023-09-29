@@ -14,6 +14,7 @@ install_github("NSAPH-Software/CRE", ref="develop")
 ```
 
 ## Simulations
+Base on CRE 0.2.2. Package
 
 ### Discovery
 Evaluate the decision rules discovery performances (i.e. Recall, Precision, Jaccard Index) of Causal Rule Ensemble using different ITE estimators (i.e. S-Learner, T-Learner, X-Learner, Augmented Inverse Propability Weighting, Causal Forest, Bayesian Causal Forest and Bayesian Regression Tree) and (Honest) Causal Tree, varying the magnitude of the Causal Effect in [0,4].
@@ -50,6 +51,7 @@ Customize your own experiment filling the parameters in `personalize` experiment
 [1] Run using the internal CRE function `estimate_ite()`. To reproduce the same analysis, either download the [CRE GitHub repository](https://github.com/NSAPH-Software/CRE) in local, or replace `estimate_ite()` with the corresponding function of your favorite library for ITE estimation, or discard this comparison (commenting [this piece of code](https://github.com/riccardocadei/CRE_applications/blob/b4e53c9cc3e3552f7c40af3bbb9d4a607812c22d/simulations/estimation.R#L167)).
 
 ## Experiments
+Based on CRE 0.3.0 Package
 
 ### MEDICARE: Air Pollution Exposure -> Mortality
 
